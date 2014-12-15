@@ -7,7 +7,9 @@ setup(
 	version = "0.1",
 	packages = find_packages(),
 	scripts = ['analyser.py', 'visualizer.py'],
-	install_requires = ['nltk>=3.0.0'],
+	install_requires = [
+		'nltk>=3.0.0'
+	],
 	package_data = {
 		'': ['*.txt']
 	},
