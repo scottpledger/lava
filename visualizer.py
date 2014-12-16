@@ -169,8 +169,8 @@ class GuiForm(QtWidgets.QMainWindow):
             if isinstance(vk,CountingProbabilisticLeaf):
                 color = QtGui.QColor(int(255*k/magU),int(255*l/magU),int(255*p),255)
                 print((rect,(int(255*k/magU),int(255*l/magU),int(255*p),255)))
-
-                self.scene.addRect(rect, pen=pen, brush=QtGui.QBrush(color) )
+                mrect = QtCore.QRectF(rect.x(),rect.y(),max(1,rect.width()),max(1,rect.height()))
+                self.scene.addRect(mrect, pen=pen, brush=QtGui.QBrush(color) )
             else:
                 x0 = rect.x()
                 y0 = rect.y()
