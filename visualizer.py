@@ -7,13 +7,25 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from nltvis import *
 from nltvis_ui import Ui_MainWindow
 
+def get_parser_location():
+    import os, urllib.request, zipfile
+    __path__ = os.path.dirname(os.path.realpath(__file__))
+    if not os.path.isdir(__path__+'/lib'):
+        os.mkdir(__path__+'/lib')
+    if not os.path.isdir(__path__+'/lib/stanford-parser-full-2014-10-31'):
+        file_name, headers = urllib.request.urlretrieve("http://nlp.stanford.edu/software/stanford-parser-full-2014-10-31.zip")
+        zfile = zipfile.ZipFile(file_name)
+        zfile.extractall(__path__+'/lib/')
+    nltk.download('punkt')
+    return __path__+'/lib/stanford-parser-full-2014-10-31'
+
 class Analyzer(object):
 
     def __init__(self,*args,**kwargs):
-        
+        parser_loc = get_parser_location()
         self.parser=nltk.parse.stanford.StanfordParser(
-            path_to_jar="stanford-parser-full-2014-10-31/stanford-parser.jar",
-            path_to_models_jar="stanford-parser-full-2014-10-31/stanford-parser-3.5.0-models.jar",
+            path_to_jar=parser_loc+"/stanford-parser.jar",
+            path_to_models_jar=parser_loc+"/stanford-parser-3.5.0-models.jar",
             model_path="edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz"
         )
         self.sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
@@ -21,8 +33,8 @@ class Analyzer(object):
 
     def analyse(self, s, status_callback=None, complete_callback=None):
         
-        status_callback = (lambda *args: print(" ".join(args)) ) if not hasattr(status_callback, '__call__') else status_callback
-        complete_callback = (lambda *args: print(" ".join(args)) ) if not hasattr(complete_callback, '__call__') else complete_callback
+        status_callback = (lambda *args: print(" ".join(str(a) for a in args)) ) if not hasattr(status_callback, '__call__') else status_callback
+        complete_callback = (lambda *args: print(" ".join(str(a) for a in args)) ) if not hasattr(complete_callback, '__call__') else complete_callback
         
         data = " ".join(s.split())
         status_callback("Tokenizing Sentences...", 0.0)
@@ -64,14 +76,23 @@ class GuiForm(QtWidgets.QMainWindow):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        
         self.ui.actionOpen_Analysis.triggered.connect(self.actionOpen_Analysis)
         self.ui.actionSave_Analysis.triggered.connect(self.actionSave_Analysis)
         self.ui.actionOpen_File_to_Analyze.triggered.connect(self.actionOpen_File_to_Analyze)
+
+
         self.a = Analyzer()
         self.argv = argv
-        if self.argv.inFile:
+
+        self.scene = QtWidgets.QGraphicsScene(self.ui.graphicsView)
+        
+        self.ui.graphicsView.setScene(self.scene)
+
+        if self.argv.inFile is not None:
             with self.argv.inFile as f:
                 self.a = Analyzer.from_dump(f)
+            self.updateVisualization()
     
     def actionOpen_Analysis(self):
         fname,somethingElseIDontUnderstand = QtWidgets.QFileDialog.getOpenFileName(self)
@@ -79,6 +100,7 @@ class GuiForm(QtWidgets.QMainWindow):
         if isfile(fname):
             with open(fname,'r') as f:
                 self.a = Analyzer.from_dump(f)
+            self.updateVisualization()
 
     def actionSave_Analysis(self):
         fname,somethingElseIDontUnderstand = QtWidgets.QFileDialog.getSaveFileName(self)
@@ -98,8 +120,78 @@ class GuiForm(QtWidgets.QMainWindow):
                     d.setAutoReset(False)
                     d.show()
 
-                    t = threading.Thread(target=self.a.analyse, args=(data,(lambda s,i: d.setLabelText(s) and d.setValue(i*100)),(lambda: d.close())))
+                    t = threading.Thread(
+                        target=self.a.analyse, 
+                        args=(data,
+                            (lambda s,i: d.setLabelText(s) and d.setValue(i*100)),
+                            (lambda: d.close() and self.updateVisualization())
+                        )
+                    )
                     t.start()
+
+    def updateVisualization(self):
+        Q = queue.Queue()
+        leaves = self.a.tree.leaves()
+        U = sorted(self.a.tree.unique_labels())
+        magU = len(U)
+        L = len(leaves)
+        rect = QtCore.QRectF(0.0,0.0,L*8,L*8)
+        for vk in list(self.a.tree):
+            uk = vk.label() 
+            if not isinstance(vk,CountingProbabilisticTree):
+                uk = '"'+uk+'"'
+            k = U.index(uk)
+            mrect = QtCore.QRectF(rect.x(),rect.y()+k*rect.height()/magU,rect.width(),rect.height()/magU)
+            Q.put((mrect, vk, self.a.tree))
+
+        pen = QtGui.QPen()
+        pen.setWidth(0)
+        self.scene.addRect(rect, pen=pen, brush=QtGui.QBrush(QtGui.QColor(255,255,255,127)) )
+        while not Q.empty():
+            rect,vk,vl = Q.get()
+            uk = vk.label() 
+            if not isinstance(vk,CountingProbabilisticTree):
+                uk = '"'+uk+'"'
+            k = U.index(uk)
+            l = 0
+            p = 0.5
+            C = list(vk) if isinstance(vk,CountingProbabilisticTree) else []
+            nbar = L
+
+            if vl is not None:
+                l = U.index(vl.label())
+                p = float(vk.count) / float(vl.count)
+                nbar = sum(ci.count for ci in C)
+            
+            if isinstance(vk,CountingProbabilisticLeaf):
+                color = QtGui.QColor(int(255*k/magU),int(255*l/magU),int(255*p),255)
+                print((rect,(int(255*k/magU),int(255*l/magU),int(255*p),255)))
+
+                self.scene.addRect(rect, pen=pen, brush=QtGui.QBrush(color) )
+            else:
+                x0 = rect.x()
+                y0 = rect.y()
+                deltaX = rect.width()
+                deltaY = rect.height()
+                if deltaX<deltaY:
+                    for vj in C:
+                        uj = vj.label()
+                        if not isinstance(vj,CountingProbabilisticTree):
+                            uj = '"' + uj + '"'
+                        y1=y0+(U.index(uj)/magU)*deltaY
+                        Q.put((QtCore.QRectF(x0,y1,deltaX,deltaY/magU),vj,vk))
+                else:
+                    for vj in C:
+                        uj = vj.label()
+                        if not isinstance(vj,CountingProbabilisticTree):
+                            uj = '"' + uj + '"'
+                        x1=x0+(U.index(uj)/magU)*deltaX
+                        Q.put((QtCore.QRectF(x1,y0,deltaX/magU,deltaY),vj,vk))
+                        #x0 += deltaX*p
+
+
+        #self.scene.addRect(rect,brush=QtGui.QBrush(QtGui.QColor(255,0,0,127)))
+
 
 
 def analyse(args):
@@ -122,7 +214,6 @@ def visualize(args):
     lyzer = Analyzer.from_dump(args.inFile)
 
 def gui(args):
-    
     app = QtWidgets.QApplication(sys.argv)
     myapp = GuiForm(args)
     myapp.show()
@@ -136,6 +227,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Analyse one or more files.',
     )
+    #parser.set_defaults(func=gui)
     subparsers = parser.add_subparsers(help='sub-command help')
 
     parser_analyse = subparsers.add_parser(
@@ -158,12 +250,13 @@ def main():
     parser_gui = subparsers.add_parser(
         'gui', help='gui help', aliases=['g'])
     parser_gui.add_argument(
-        'inFile',nargs='?', type=argparse.FileType('r', encoding='UTF-8'),
+        'inFile', nargs='?', type=argparse.FileType('r', encoding='UTF-8'),
         help='Output of analyze to visualize.')
     parser_gui.set_defaults(func=gui)
 
 
     args = parser.parse_args()
+
     if 'func' in args:
         args.func(args)
     else:

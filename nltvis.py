@@ -67,6 +67,8 @@ class CountingProbabilisticNode(object):
     __le__ = lambda self, other: self < other or self == other
     __ge__ = lambda self, other: not self < other
 
+
+
 class CountingProbabilisticLeaf(CountingProbabilisticNode,nltk.probability.ProbabilisticMixIn):
 
     def __init__(self,label,**prob_kwargs):
@@ -112,7 +114,7 @@ class CountingProbabilisticLeaf(CountingProbabilisticNode,nltk.probability.Proba
         return (' '*depth)+self._label+' '+str(self.count)
 
     def unique_labels(self,cls=CountingProbabilisticNode):
-        return [self.label()]
+        return ['"'+self.label()+'"']
 
 class CountingProbabilisticTree(CountingProbabilisticNode,nltk.tree.ProbabilisticTree):
 
@@ -203,7 +205,7 @@ class CountingProbabilisticTree(CountingProbabilisticNode,nltk.tree.Probabilisti
         line1 = lines[0].split(" ")
 
         parent = CountingProbabilisticTree(line1[0],[],prob=1.0)
-        parent.count = line1[1]
+        parent.count = int(line1[1])
         path = [parent] + [None for s in lines]
 
         for i in range(1,len(lines)):

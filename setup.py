@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
 	name = "LaVa",
-	version = "0.1",
+	version = "0.2",
 	packages = find_packages(),
 	scripts = ['analyser.py', 'visualizer.py'],
 	install_requires = [
@@ -19,3 +19,4 @@ setup(
 	license = "GPL",
 	url = "https://github.com/scottpledger/lava"
 )
+
