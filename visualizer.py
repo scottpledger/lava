@@ -138,7 +138,7 @@ class GuiForm(QtWidgets.QMainWindow):
         U = sorted(self.a.tree.unique_labels())
         magU = len(U)
         L = len(leaves)
-        rect = QtCore.QRectF(0.0,0.0,L*8,L*8)
+        rect = QtCore.QRectF(0.0,0.0,3000.0,3000.0)
         for vk in list(self.a.tree):
             uk = vk.label() 
             if not isinstance(vk,CountingProbabilisticTree):
@@ -182,14 +182,14 @@ class GuiForm(QtWidgets.QMainWindow):
                         if not isinstance(vj,CountingProbabilisticTree):
                             uj = '"' + uj + '"'
                         y1=y0+(U.index(uj)/magU)*deltaY
-                        Q.put((QtCore.QRectF(x0,y1,deltaX,deltaY/magU),vj,vk))
+                        Q.put((QtCore.QRectF(x0,y1,max(1.0,deltaX),max(1.0,deltaY/magU)),vj,vk))
                 else:
                     for vj in C:
                         uj = vj.label()
                         if not isinstance(vj,CountingProbabilisticTree):
                             uj = '"' + uj + '"'
                         x1=x0+(U.index(uj)/magU)*deltaX
-                        Q.put((QtCore.QRectF(x1,y0,deltaX/magU,deltaY),vj,vk))
+                        Q.put((QtCore.QRectF(x1,y0,max(1.0,deltaX/magU),max(1.0,deltaY)),vj,vk))
                         #x0 += deltaX*p
 
 
