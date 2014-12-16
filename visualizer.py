@@ -23,10 +23,13 @@ class Analyzer(object):
 
     def __init__(self,*args,**kwargs):
         parser_loc = get_parser_location()
-        self.parser=nltk.parse.stanford.StanfordParser(
+        self.parser = nltk.parse.stanford.StanfordParser(
             path_to_jar=parser_loc+"/stanford-parser.jar",
             path_to_models_jar=parser_loc+"/stanford-parser-3.5.0-models.jar",
-            model_path="edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz"
+            model_path="edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz",
+            encoding = 'UTF-8',
+            verbose = True,
+            java_options = '-mx2000m'
         )
         self.sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
         self.tree = CountingProbabilisticTree('ROOT', [], prob=1.0)
@@ -46,13 +49,13 @@ class Analyzer(object):
         tc = 0
         ntrees = len(trees)
         n = 0
-        status_callback("Merging Parse Trees... %s/%s"%(n,ntrees), (ntrees+5*n)/(5*ntrees))
+        status_callback("Merging Parse Trees... %s/%s"%(n,ntrees), 0.2+0.8*(n/ntrees))
         
         for tree in trees:
             tc += len(tree.leaves())
             self.tree.merge(tree)
             n+=1
-            status_callback("Merging Parse Trees... %s/%s"%(n,ntrees), (ntrees+5*n)/(5*ntrees))
+            status_callback("Merging Parse Trees... %s/%s"%(n,ntrees), 0.2+0.8*(n/ntrees))
         status_callback("Done Merging Parse Trees!", 1.0)
         complete_callback()
         
@@ -199,16 +202,23 @@ def analyse(args):
     Handles the analyse subcommand.
     """
     lyzer = Analyzer()
-
-    for filen in args.inFile:
-        lyzer.analyse(filen.read())
-
     outFile = args.outFile
     ofN = outFile.name
-
-    lyzer.dump_analysis(args.outFile)
-
     outFile.close()
+
+    n = 0
+    N = len(args.inFile)
+
+    for filen in args.inFile:
+        n += 1
+        print("Analyzing %d/%d: %s"%(n,N,filen.name))
+        try:
+            lyzer.analyse(filen.read())
+        except Exception as ex:
+            print(ex)
+        finally:
+            with open(ofN,'w') as outFile:
+                lyzer.dump_analysis(outFile)
 
 def visualize(args):
     lyzer = Analyzer.from_dump(args.inFile)
