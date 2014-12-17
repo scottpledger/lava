@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created: Sun Nov 30 13:20:18 2014
-#      by: PyQt5 UI code generator 5.2.1
+# Created: Tue Dec 16 22:10:37 2014
+#      by: PyQt5 UI code generator 5.3.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -22,7 +22,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.graphicsView)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -36,10 +36,17 @@ class Ui_MainWindow(object):
         self.actionOpen_File_to_Analyze.setObjectName("actionOpen_File_to_Analyze")
         self.actionSave_Analysis = QtWidgets.QAction(MainWindow)
         self.actionSave_Analysis.setObjectName("actionSave_Analysis")
+        self.actionSave_Image = QtWidgets.QAction(MainWindow)
+        self.actionSave_Image.setObjectName("actionSave_Image")
+        self.actionNew_Analysis = QtWidgets.QAction(MainWindow)
+        self.actionNew_Analysis.setObjectName("actionNew_Analysis")
+        self.menuFile.addAction(self.actionNew_Analysis)
         self.menuFile.addAction(self.actionOpen_Analysis)
         self.menuFile.addAction(self.actionSave_Analysis)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionOpen_File_to_Analyze)
+        self.menuFile.addSeparator()
+        self.menuFile.addAction(self.actionSave_Image)
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -47,9 +54,11 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "LaVa"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.actionOpen_Analysis.setText(_translate("MainWindow", "Open Analysis"))
         self.actionOpen_File_to_Analyze.setText(_translate("MainWindow", "Add File to Analysis"))
         self.actionSave_Analysis.setText(_translate("MainWindow", "Save Analysis"))
+        self.actionSave_Image.setText(_translate("MainWindow", "Save Image"))
+        self.actionNew_Analysis.setText(_translate("MainWindow", "New Analysis"))
 

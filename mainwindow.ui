@@ -26,17 +26,20 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionNew_Analysis"/>
     <addaction name="actionOpen_Analysis"/>
     <addaction name="actionSave_Analysis"/>
     <addaction name="separator"/>
     <addaction name="actionOpen_File_to_Analyze"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave_Image"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -54,6 +57,16 @@
   <action name="actionSave_Analysis">
    <property name="text">
     <string>Save Analysis</string>
+   </property>
+  </action>
+  <action name="actionSave_Image">
+   <property name="text">
+    <string>Save Image</string>
+   </property>
+  </action>
+  <action name="actionNew_Analysis">
+   <property name="text">
+    <string>New Analysis</string>
    </property>
   </action>
  </widget>

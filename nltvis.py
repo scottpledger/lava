@@ -116,6 +116,9 @@ class CountingProbabilisticLeaf(CountingProbabilisticNode,nltk.probability.Proba
     def unique_labels(self,cls=CountingProbabilisticNode):
         return ['"'+self.label()+'"']
 
+    def tcount(self):
+        return self.count
+
 class CountingProbabilisticTree(CountingProbabilisticNode,nltk.tree.ProbabilisticTree):
 
     def __init__(self,node, children=None, **prob_kwargs):
@@ -139,6 +142,9 @@ class CountingProbabilisticTree(CountingProbabilisticNode,nltk.tree.Probabilisti
                 self[cl].merge(c)
 
         self.normalize()
+
+    def tcount(self):
+        return sum(s.count for s in self)
 
     def __contains__(self,item):
         l = item.label() if isinstance(item,nltk.tree.Tree) else item
