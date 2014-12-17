@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'dimension_dialog.ui'
 #
-# Created: Tue Dec 16 22:10:37 2014
-#      by: PyQt5 UI code generator 5.3.2
+# Created: Wed Dec 17 13:35:07 2014
+#      by: PyQt5 UI code generator 5.2.1
 #
 # WARNING! All changes made in this file will be lost!
 
