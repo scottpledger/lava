@@ -77,6 +77,7 @@ class Analyzer(object):
 class GuiForm(QtWidgets.QMainWindow):
     def __init__(self, argv, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
+        self.visualized = False
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         
@@ -91,6 +92,8 @@ class GuiForm(QtWidgets.QMainWindow):
         self.scene = QtWidgets.QGraphicsScene(self.ui.graphicsView)
         
         self.ui.graphicsView.setScene(self.scene)
+        self.pxmp_itm = self.scene.addPixmap(QtGui.QPixmap(1000,1000))
+        
 
         if self.argv.inFile is not None:
             with self.argv.inFile as f:
@@ -124,32 +127,59 @@ class GuiForm(QtWidgets.QMainWindow):
                     d.show()
 
                     t = threading.Thread(
-                        target=self.a.analyse, 
+                        target=self.a.analyse,
                         args=(data,
                             (lambda s,i: d.setLabelText(s) and d.setValue(i*100)),
-                            (lambda: d.close() and self.updateVisualization())
+                            (lambda: d.close() and self._updateVisualization())
                         )
                     )
                     t.start()
 
-    def updateVisualization(self):
+    def updateVisualization(self,threaded=True):
+        if threaded:
+            t = threading.Thread(
+                target=self._updateVisualization,
+                args=()
+            )
+            t.start()
+        else:
+            self._updateVisualization()
+
+    def _updateVisualization(self):
+        if self.visualized == False:
+            self.visualized = True
+        else:
+            return
+        print("Updating...")
+        pixMin = 4
+        alphaMin = 127
         Q = queue.Queue()
         leaves = self.a.tree.leaves()
+        
+
         U = sorted(self.a.tree.unique_labels())
+        V = [u for u in U if u[0]!='"']
         magU = len(U)
+        magV = len(V)
         L = len(leaves)
-        rect = QtCore.QRectF(0.0,0.0,3000.0,3000.0)
+        rect = QtCore.QRectF(0.0,0.0,1000.0,1000.0)
+        pxmp = QtGui.QPixmap(1000,1000)
+        painter = QtGui.QPainter(pxmp)
+
+        def paintRect(rect,color):
+            painter.fillRect(rect,color)
+
         for vk in list(self.a.tree):
             uk = vk.label() 
             if not isinstance(vk,CountingProbabilisticTree):
                 uk = '"'+uk+'"'
-            k = U.index(uk)
-            mrect = QtCore.QRectF(rect.x(),rect.y()+k*rect.height()/magU,rect.width(),rect.height()/magU)
+            k = V.index(uk)
+            mrect = QtCore.QRectF(rect.x(),rect.y()+k*rect.height()/magV,rect.width(),rect.height()/magV)
             Q.put((mrect, vk, self.a.tree))
 
-        pen = QtGui.QPen()
+        pen = QtGui.QPen(QtGui.QColor(0,0,0,0))
         pen.setWidth(0)
-        self.scene.addRect(rect, pen=pen, brush=QtGui.QBrush(QtGui.QColor(255,255,255,127)) )
+        #self.scene.addRect(rect, pen=pen, brush=QtGui.QBrush(QtGui.QColor(255,255,255,127)) )
         while not Q.empty():
             rect,vk,vl = Q.get()
             uk = vk.label() 
@@ -167,10 +197,10 @@ class GuiForm(QtWidgets.QMainWindow):
                 nbar = sum(ci.count for ci in C)
             
             if isinstance(vk,CountingProbabilisticLeaf):
-                color = QtGui.QColor(int(255*k/magU),int(255*l/magU),int(255*p),255)
-                print((rect,(int(255*k/magU),int(255*l/magU),int(255*p),255)))
-                mrect = QtCore.QRectF(rect.x(),rect.y(),max(1,rect.width()),max(1,rect.height()))
-                self.scene.addRect(mrect, pen=pen, brush=QtGui.QBrush(color) )
+                
+                mrect = QtCore.QRectF(rect.x(),rect.y(),max(pixMin,rect.width()),max(pixMin,rect.height()))
+                color = (int(255*k/magU), int(255*l/magU), int(255*p), alphaMin+int((255-alphaMin)*0.5*(rect.width()/mrect.width()+rect.height()/mrect.height())))
+                paintRect(mrect, QtGui.QColor(*color))
             else:
                 x0 = rect.x()
                 y0 = rect.y()
@@ -191,8 +221,10 @@ class GuiForm(QtWidgets.QMainWindow):
                         x1=x0+(U.index(uj)/magU)*deltaX
                         Q.put((QtCore.QRectF(x1,y0,deltaX/magU,deltaY),vj,vk))
                         #x0 += deltaX*p
-
-
+        del painter
+        self.pxmp_itm.setPixmap(pxmp)
+        
+        print("Done")
         #self.scene.addRect(rect,brush=QtGui.QBrush(QtGui.QColor(255,0,0,127)))
 
 
